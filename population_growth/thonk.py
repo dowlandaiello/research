@@ -22,37 +22,72 @@ the scale of a nation’s economy and its respective growth rate can be drawn.
 
 import csv
 import matplotlib.pyplot as plt
+import numpy as np
+import os
+from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 from sklearn.linear_model import LinearRegression
 
 # Demonstrating the relationship between economy size, and gdp growth rate
-countries = ["United States", "United Kingdom", "Japan", "China", "Vietnam", "India"]
+countries = ["Vietnam", "China"]
+
+datasets = ["GDP growth rate", "GDP per capita", "population growth rate"]
 
 # GDP growth and per capita for each country
 country_data = {}
 
-with open("le_data/API_NY.GDP.MKTP.KD.ZG_DS2_en_csv_v2_1068887.csv") as f, open("le_data/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_1068945.csv") as f2:
-    readers = [csv.reader(f), csv.reader(f2)]
+def dataset():
+    directory = "le_data"
 
-    for i, (growth_line, per_capita_line)  in enumerate(zip(*readers)):
-        if len(growth_line) <= 1:
-            continue
+    for name in os.listdir(directory):
+        yield csv.reader(open(os.path.join(directory, name)))
 
-        if growth_line[0] in countries:
-            country_data[growth_line[0]] = {
-                "gdp_growth_rate": growth_line[5:],
-                "gdp_per_capita": per_capita_line[5:]
-            }
+readers = dataset()
 
-plt.figure(figsize=(4, 3))
+for i, sources in enumerate(zip(*readers)):
+    if len(sources[0]) <= 1:
+        continue
 
-ax = plt.axes()
+    if sources[0][0] in countries:
+        final_data = {}
+
+        for j, source in enumerate(sources):
+            data = source[5:-1]
+            fixed_data = []
+
+            for k, entry in enumerate(data):
+                if entry == "":
+                    if k == 0:
+                        entry = float(next(filter(lambda x : x != "", data)))
+                    else:
+                        entry = fixed_data[k - 1]
+                else:
+                    entry = float(entry)
+
+                fixed_data.append(entry)
+
+            final_data[j] = fixed_data
+
+        final_data["year"] = list(range(1960, 1960 + len(final_data[0])))
+
+        country_data[sources[0][0]] = final_data
+
+plt.figure(figsize=(20, 20))
+
+subplots = [plt.subplots() * (len(country_data[countries[0]]) - 1)]
 
 for country in country_data:
     data = country_data[country]
 
-    ax.plot(data["gdp_per_capita"], data["gdp_growth_rate"], marker="", color="olive", linewidth=2, label=country)
+    for i, dataset in enumerate(data):
+        ax = subplots[i][1]
+        ax2 = ax.twinx()
 
-ax.set_xlabel("GDP per capita")
-ax.set_ylabel("GDP growth rate")
+        ax.plot(data["year"], dataset, marker="", linewidth=2, label=country)
+        ax.set_xlabel("year")
+        ax.set_ylabel(datasets[i])
+        ax.yaxis.set_major_locator(plt.MaxNLocator(15))
+
+        ax2.plot(data["year"], data[i - 1], marker="", linewidth=2, label=country)
+        ax2.set_major_locator(plt.MaxNLocator(15))
 
 plt.savefig("PepoThink.png")
