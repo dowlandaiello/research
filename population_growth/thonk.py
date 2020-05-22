@@ -22,15 +22,16 @@ the scale of a nation’s economy and its respective growth rate can be drawn.
 
 import csv
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 import numpy as np
 import os
-from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
+import itertools
 from sklearn.linear_model import LinearRegression
 
 # Demonstrating the relationship between economy size, and gdp growth rate
-countries = ["Vietnam", "China"]
+countries = ["United States", "Vietnam", "China"]
 
-datasets = ["GDP growth rate", "GDP per capita", "population growth rate"]
+datasets = ["GDP per capita", "population growth rate", "gdp growth rate"]
 
 # GDP growth and per capita for each country
 country_data = {}
@@ -51,7 +52,7 @@ for i, sources in enumerate(zip(*readers)):
         final_data = {}
 
         for j, source in enumerate(sources):
-            data = source[5:-1]
+            data = source[4:-1]
             fixed_data = []
 
             for k, entry in enumerate(data):
@@ -71,23 +72,26 @@ for i, sources in enumerate(zip(*readers)):
 
         country_data[sources[0][0]] = final_data
 
-plt.figure(figsize=(20, 20))
+plt.rcParams["figure.figsize"] = [16, 9]
 
-subplots = [plt.subplots() * (len(country_data[countries[0]]) - 1)]
+print(country_data["United States"][0][5])
 
-for country in country_data:
+_, subplots = plt.subplots(len(country_data.keys()), len(country_data[countries[0]]) - 1)
+
+for i, country in enumerate(country_data):
     data = country_data[country]
 
-    for i, dataset in enumerate(data):
-        ax = subplots[i][1]
+    for j, dataset in enumerate(list(data.values())[1:-1]):
+        ax = subplots[i][j]
         ax2 = ax.twinx()
 
-        ax.plot(data["year"], dataset, marker="", linewidth=2, label=country)
         ax.set_xlabel("year")
-        ax.set_ylabel(datasets[i])
+        ax.set_ylabel(datasets[j])
         ax.yaxis.set_major_locator(plt.MaxNLocator(15))
 
-        ax2.plot(data["year"], data[i - 1], marker="", linewidth=2, label=country)
-        ax2.set_major_locator(plt.MaxNLocator(15))
+        ax2.plot(data["year"], data[list(data.keys())[j - 1]], marker="", linewidth=2, label=country)
+        ax2.yaxis.set_major_locator(plt.MaxNLocator(15))
+
+plt.tight_layout()
 
 plt.savefig("PepoThink.png")
