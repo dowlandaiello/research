@@ -1,2 +1,3 @@
-# thonking
-Big head. Many thonk.
+# Research
+
+Some of my thoughts.
